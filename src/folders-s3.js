@@ -1,4 +1,8 @@
 var uriParse = require('url');
+var AWS = require('aws-sdk');
+var path = require('path');
+var fs = require('fs');
+
 var FoldersS3 = function(prefix,options){
 	console.log("FoldersS3");
 	options = options || {};
@@ -14,18 +18,104 @@ var FoldersS3 = function(prefix,options){
 		var conn = parseConnString(options.connectionString);
 		conn.silent = options.silent;
 		conn.directory = options.directory;
-		console.log(conn);
-		var S3rver = require('s3rver');
-		this.client = new S3rver(conn).run(function (err, host, port) {
-        if(err) {
-         console.log(err);
-        }
-         console.log("aws s3 test server running at : "+ host+":"+port);
-    });
+		var Server = require('./embedded-s3-server');
+		this.server = new Server(conn);
+		this.server.start(options.backend);
 		
-	}
-}
+    }
+};
+
+module.exports = FoldersS3;
+
+FoldersS3.prototype.features = FoldersS3.features = {
 	
+	cat : true,
+	ls : true,
+	write : true,
+	server : true
+	
+};
+
+FoldersS3.prototype.prepare = function(){
+	var self = this;
+	// FIXME: connection is available to local s3 server only 
+	var config = {
+  		s3ForcePathStyle: true,
+  		accessKeyId: 'ACCESS_KEY_ID',
+  		secretAccessKey: 'SECRET_ACCESS_KEY',
+  		endpoint: new AWS.Endpoint('http://localhost:4568')
+	};
+
+	self.client = new AWS.S3(config);
+};
+	
+FoldersS3.prototype.ls = function(path,cb){
+
+	var result;
+	var self = this;
+	self.prepare();
+    self.client.listObjects({
+        Bucket: 'some bucket',
+        Prefix: 'some prefix'
+    }, function (err, data) {
+
+
+        if (err) {
+            console.log("error occured in folders-aws lsBucket() ", err);
+            return cb(err, null);
+
+        } else {
+            result = data.Contents;
+            return cb(null, result);
+
+        }
+    });
+	
+};
+
+FoldersS3.prototype.cat = function(path,cb){
+	var self = this;
+	self.prepare();
+	var params = {
+        Bucket: 'some bucket',
+        /* required */
+
+        Key: 'some key' /* required */
+    };
+	
+    // FIXME: See if we can get some info on the remote file, esp. length.
+    // headObject / listObjects  works well enough usually.
+
+	var f = self.client.getObject(params);
+			
+    var file = f.createReadStream();
+            
+    cb(null, {
+                stream: file,
+                size: 'some size',
+                name: path.basename(key)
+    });
+
+         // successful response
+   
+	
+};
+
+FoldersS3.prototype.write = function(path,data,cb){
+	var self = this;
+	self.prepare();
+	// for now uploading stub data only .path data will be ignored 
+	var params = {
+  		Key: 'Key',
+ 		Bucket: 'Bucket',
+  		Body: fs.createReadStream('./tyu.jpg')
+	};
+
+	self.client.upload(params, function uploadCallback (err, data) {
+  		console.log(err, data)
+	});
+};
+
 var parseConnString = function(connectionString){
 	var uri = uriParse.parse(connectionString, true);
 	var conn = {

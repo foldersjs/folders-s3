@@ -1,16 +1,20 @@
 /*
  * This file contains code for testing aws s3 test server 
  */
-var fs = require('fs')
-var t = require('folders-aws');
-
+var Fs = require('folders/src/fs.js');
+var local = require('folders/src/folders-local');
 var FoldersS3 = require('./folders-s3');
+//var file = fs.createReadStream('tyi.jpg');
 
-var o = new FoldersS3();
+var t = new Fs(new local());
+
+
+//console.log(t);
+var o = new FoldersS3("jjjj",{fs:t});
 
 // listing a bucket from edded s3 s3rver 
 
-		o.ls('/S3/us-west-2/bucket1/',function(err,res){
+		o.listObjects('bucket','',function(err,res){
 		
 			if (!err)
 				console.log(res);
@@ -18,20 +22,23 @@ var o = new FoldersS3();
 	
 
 // downloading a file from embeddeddded s3 s3rver 
-
-		o.cat('/S3/us-west-2/bucket1/',function(err,res){
+/*
+		o.download('Key',function(err,res){
 		
-			if (!err)
+			if (err)
 				console.log(res);
+			res.stream.pipe(process.stdout);
 		});
 
+*/
 // uploading a file to embedded s3 s3rver 
+/*
+o.upload('key',file,function(err,res){
 
-		o.write('/S3/us-west-2/bucket1/',require('fs').createReadStream('./tyu.jpg'),function(err,res){
-		
-			if (!err)
-				console.log(res);
-		});
-
-
+	if (!err){
+	
+		console.log(res);
+	}
+});
+*/
 

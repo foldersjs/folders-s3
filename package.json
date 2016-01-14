@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "aws-sdk": "^2.2.28",
-    "s3rver": "0.0.12"
+	"s3rver": "git://github.com/anitahitouch/s3rver.git#backendfs",
+	"folders":"git://github.com/foldersjs/folders" 
   }
 }
